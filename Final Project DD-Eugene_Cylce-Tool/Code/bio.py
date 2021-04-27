@@ -1,4 +1,5 @@
 import pandas as pd
+import tkinter as tk
 from tkinter import *
 from scipy import stats
 from tkinter import filedialog
@@ -80,7 +81,7 @@ class BIO:
         # initialize the application
         self.root = root
         self.root.title("Pipeline Tool")
-        self.root.geometry("1050x550")
+        self.root.geometry("1050x700")
         
         # global variables
         self.output_loc = ''
@@ -101,9 +102,25 @@ class BIO:
         
 
         #label to get miniEugene Code
-        self.eugene_label = Label(root, text="Eugine Code: ",font=("Arial", 14))
+        self.eugene_label = Label(root, text="Eugene Code: ",font=("Arial", 14))
         self.eugene_label.grid(row=2, column=3, padx=0, pady=60, sticky=W+N)
-
+        
+        #label for output text
+        self.output_label = Label(root, text="Output: ",font=("Arial", 14))
+        self.output_label.grid(row=2, column=3, padx=0, pady=250, sticky=W+N)
+        
+        #label for level per factor
+        self.level_label = Label(root, text="Level per Factor",font=("Arial", 12))
+        self.level_label.grid(row=2, column=0, padx=20, pady=300,sticky=S+W)
+        
+        #label for number of trials
+        self.level_label = Label(root, text="# of Trials",font=("Arial", 12))
+        self.level_label.grid(row=2, column=0, padx=20, pady=250,sticky=S+W)
+        
+        #label for Factorial Design
+        self.level_label = Label(root, text="Factorial Design",font=("Arial", 12))
+        self.level_label.grid(row=2, column=0, padx=20, pady=200,sticky=S+W)
+        
         '''BUTTONS'''
         # button to get the path of the data csv file
         self.file_btn = Button(root, text="Find CSV File", command= self.find_file, borderwidth=2, relief="raised")
@@ -115,6 +132,9 @@ class BIO:
 
         
         # create button to call miniEugene
+        self.eugene_btn = Button(root, text="Solve", command= self.solve, font=("Arial", 10),borderwidth=1.4, relief="solid", width=10, height=3)
+        self.eugene_btn.grid(row=2, column=3, padx=300, pady=0, sticky=N+W)
+        
         self.eugene_btn = Button(root, text="miniEugene", command= self.open_eugene, font=("Arial", 10),borderwidth=1.4, relief="solid", width=10, height=3)
         self.eugene_btn.grid(row=2, column=3, padx=200, pady=0, sticky=N+W)
         
@@ -123,13 +143,21 @@ class BIO:
         self.DD_btn.grid(row=2, column=3, padx=100, pady=0, sticky=N+W)
         
         # create button to compare
-        self.comp_btn = Button(root, text="Compare", command= self.compare, font=("Arial", 10),borderwidth=1.4, relief="solid", width=10, height=3)
+        self.comp_btn = Button(root, text="Load", command= self.load, font=("Arial", 10),borderwidth=1.4, relief="solid", width=10, height=3)
         self.comp_btn.grid(row=2, column=3, padx=0, pady=0, sticky=N+W)
 
         '''Text Field'''
         #entry field for miniEugene code
-        self.eds_entry = Text(root, width=35, height=20)
-        self.eds_entry.grid(row=2, column=3, padx=150, pady=65, sticky=N+W)
+        self.eugene_entry = Text(root, width=35, height=10)
+        self.eugene_entry.grid(row=2, column=3, padx=150, pady=65, sticky=N+W)
+        
+        # Create text widget and specify size.
+        self.output_text = Text(root, width=35, height=10)
+        self.output_text.grid(row=2, column=3, padx=150, pady=250, sticky=N+W)
+  
+        # Create label
+        l = Label(root, text = "Fact of the Day")
+        l.config(font =("Courier", 14))
         
         '''ENTRY FIELDS'''
         # entry field to display path for data csv file
@@ -140,12 +168,30 @@ class BIO:
         self.out_entry = Entry(root, width=55)
         self.out_entry.grid(row=2, column=1, columnspan=2, padx=5,pady=350, sticky=S+W)
         
+        # entry field for level per factor
+        self.level_entry = Entry(root, width=10)
+        self.level_entry.grid(row=2, column=0, columnspan=2, padx=150, pady=300,sticky=S+W)
+        
+        
+        # entry field for number of Trials
+        self.trials_entry = Entry(root, width=10)
+        self.trials_entry.grid(row=2, column=0,columnspan=2, padx=150, pady=250,sticky=S+W)
+        
+        
         '''FRAME'''
         # create frame for the table
         self.tframe = Frame(root)
-        self.tframe.grid(row=2, column=0, columnspan=3, padx=10, pady=20, sticky=N)
-
-
+        self.tframe.grid(row=2, column=0, columnspan=3, padx=10, pady=20, sticky=N+W)
+        
+        
+        '''Drop Down Menu'''
+        tkvar = StringVar(root)
+        # Dictionary with options
+        choices = { 'Design 1','Design 2','Design 3','Design 4','Design 5'}
+        tkvar.set('Select Design') # set the default option
+        popupMenu = OptionMenu(root, tkvar, *choices)
+        popupMenu.grid(row=2, column=0,columnspan=2, padx=150, pady=200,sticky=S+W)
+        
     '''Button Functions'''
     # function to get csv file path
     def find_file(self):
@@ -188,15 +234,38 @@ class BIO:
         driver.get('file:///C:/Users/bmahabir/Desktop/doubledutch/app/pathwayDesigner/pathwayDesigner.html#/')
         
         
-    def compare(self):
+    def load(self):
+        #add input path as a var
+        input = self.input_loc
+        #create table
         self.table = TableCanvas(self.tframe)
         self.table.thefont = ('Arial',10)
-        input = self.input_loc
-        self.table.importCSV(input)
+        
+        #edit csv and save
+        df = pd.read_csv(input)
+        #create list of factors
+        
+        factors = ['cnifH', 'cnifD', 'cnifK', 'cnifU', 'cnifS', 'cnifM', 'cnifE', 'cnifN', 'cnifB']
+        
+        new_df=pd.DataFrame(factors)
+        
+        #append list
+        df = df.append(factors, ignore_index = True)
+        #make sure index is false when saving excel file
+        df.to_csv(r'C:/Users/bmahabir/Desktop/DNA_component_library_edit.csv',index=False)
+        #import edited excel file
+        self.table.importCSV(r'C:/Users/bmahabir/Desktop/DNA_component_library_edit.csv')
         self.table.show()
+        
+        #test entry get number
+        print(self.trials_entry.get())
+        #test output put text
+        self.output_text.insert(tk.END,"Good job")
+        
+    def solve(self):
+        pass
     
     '''Non Button Functions'''
-    
     # load sorted data as pandas dataframe
     def load_sorted(self,name):
         # file location for the csv file
