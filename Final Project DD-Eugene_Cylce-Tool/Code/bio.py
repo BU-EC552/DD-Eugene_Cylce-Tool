@@ -15,6 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 import os, sys
 
 #handler code for running local instance of javascript code
+#https://stackoverflow.com/questions/10123929/fetch-a-file-from-a-local-url-with-python-requests
 if sys.version_info.major < 3:
     from urllib import url2pathname
 else:
@@ -83,7 +84,15 @@ class BIO:
         self.root.title("Pipeline Tool")
         self.root.geometry("1050x700")
         
-        # global variables
+        # global variables (make sure to change paths as necessary)
+        
+        #path to chrome driver
+        self.chrome_driver_path = r"C:\Users\bmahabir\Desktop\chromedriver_win32\chromedriver.exe"
+        #path to local install of DD
+        self.DD_path ='file:///C:/Users/bmahabir/Desktop/doubledutch/app/pathwayDesigner/pathwayDesigner.html#/'
+        #path to miniEugene Website (shouldnt be changed)
+        self.miniEugene_path = 'https://minieugene.eugenecad.org/'
+        
         self.output_loc = ''
         self.input_loc = ''
         self.window = 1
@@ -185,11 +194,11 @@ class BIO:
         
         
         '''Drop Down Menu'''
-        tkvar = StringVar(root)
+        self.drop_down = StringVar(root)
         # Dictionary with options
         choices = { 'Design 1','Design 2','Design 3','Design 4','Design 5'}
-        tkvar.set('Select Design') # set the default option
-        popupMenu = OptionMenu(root, tkvar, *choices)
+        self.drop_down.set('Select Design') # set the default option
+        popupMenu = OptionMenu(root, self.drop_down, *choices)
         popupMenu.grid(row=2, column=0,columnspan=2, padx=150, pady=200,sticky=S+W)
         
     '''Button Functions'''
@@ -221,17 +230,17 @@ class BIO:
     def open_eugene(self):
         #clear driver an instantiate the website for eugine
         driver = None
-        driver = webdriver.Chrome(r"C:\Users\bmahabir\Desktop\chromedriver_win32\chromedriver.exe")
-        driver.get('https://minieugene.eugenecad.org/')
+        driver = webdriver.Chrome(self.chrome_driver_path)
+        driver.get(self.miniEugene_path)
         
     def open_double_dutch(self):
         #clear driver instantiate the local code for DD
         requests_session = requests.session()
         requests_session.mount('file://', LocalFileAdapter())
-        r = requests_session.get('file:///C:/Users/bmahabir/Desktop/doubledutch/app/pathwayDesigner/pathwayDesigner.html#/')
+        r = requests_session.get(self.DD_path)
         driver = None
-        driver = webdriver.Chrome(r"C:\Users\bmahabir\Desktop\chromedriver_win32\chromedriver.exe")
-        driver.get('file:///C:/Users/bmahabir/Desktop/doubledutch/app/pathwayDesigner/pathwayDesigner.html#/')
+        driver = webdriver.Chrome(self.chrome_driver_path)
+        driver.get(self.DD_path)
         
         
     def load(self):
@@ -244,23 +253,26 @@ class BIO:
         #edit csv and save
         df = pd.read_csv(input)
         #create list of factors
-        
         factors = ['cnifH', 'cnifD', 'cnifK', 'cnifU', 'cnifS', 'cnifM', 'cnifE', 'cnifN', 'cnifB']
         
-        new_df=pd.DataFrame(factors)
+        #add list to dataframe
+        df['Contraits'] = pd.Series(factors, index=None)
+        df.apply(lambda col: col.drop_duplicates().reset_index(drop=True))
         
-        #append list
-        df = df.append(factors, ignore_index = True)
         #make sure index is false when saving excel file
         df.to_csv(r'C:/Users/bmahabir/Desktop/DNA_component_library_edit.csv',index=False)
         #import edited excel file
         self.table.importCSV(r'C:/Users/bmahabir/Desktop/DNA_component_library_edit.csv')
         self.table.show()
         
+        '''Code to output text, get entry data, and drop down menu'''
         #test entry get number
         print(self.trials_entry.get())
         #test output put text
         self.output_text.insert(tk.END,"Good job")
+        #test get drop down data
+        print(self.drop_down.get())
+        
         
     def solve(self):
         pass
