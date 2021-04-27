@@ -12,6 +12,7 @@ from selenium.webdriver.common import action_chains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select
 import os, sys
 
 #handler code for running local instance of javascript code
@@ -23,7 +24,6 @@ else:
 
 class LocalFileAdapter(requests.adapters.BaseAdapter):
     """Protocol Adapter to allow Requests to GET file:// URLs
-
     @todo: Properly handle non-empty hostname portions.
     """
 
@@ -45,7 +45,6 @@ class LocalFileAdapter(requests.adapters.BaseAdapter):
 
     def send(self, req, **kwargs):  # pylint: disable=unused-argument
         """Return the file specified by the given request
-
         @type req: C{PreparedRequest}
         @todo: Should I bother filling `response.headers` and processing
                If-Modified-Since and friends using `os.stat`?
@@ -87,9 +86,9 @@ class BIO:
         # global variables (make sure to change paths as necessary)
         
         #path to chrome driver
-        self.chrome_driver_path = r"C:\Users\bmahabir\Desktop\chromedriver_win32\chromedriver.exe"
+        self.chrome_driver_path = r"/Users/brianhjung/Desktop/Big_SynBio_Project/chromedriver"
         #path to local install of DD
-        self.DD_path ='file:///C:/Users/bmahabir/Desktop/doubledutch/app/pathwayDesigner/pathwayDesigner.html#/'
+        self.DD_path ='file:///Users/brianhjung/Desktop/Big_SynBio_Project/doubledutch-master/app/pathwayDesigner/pathwayDesigner.html'
         #path to miniEugene Website (shouldnt be changed)
         self.miniEugene_path = 'https://minieugene.eugenecad.org/'
         
@@ -108,7 +107,6 @@ class BIO:
         # label for error message
         self.error_label = Label(root, text="", fg='red',font=("Arial", 15))
         self.error_label.grid(row=2, column=3,padx=10,pady=240,sticky=S+W)
-        
 
         #label to get miniEugene Code
         self.eugene_label = Label(root, text="Eugene Code: ",font=("Arial", 14))
@@ -139,7 +137,6 @@ class BIO:
         self.out_btn = Button(root, text="Select Output Location", command= self.select_output, borderwidth=2, relief="raised")
         self.out_btn.grid(row=2, column=0, padx=20, pady=350,sticky=S+W)
 
-        
         # create button to call miniEugene
         self.eugene_btn = Button(root, text="Solve", command= self.solve, font=("Arial", 10),borderwidth=1.4, relief="solid", width=10, height=3)
         self.eugene_btn.grid(row=2, column=3, padx=300, pady=0, sticky=N+W)
@@ -181,7 +178,6 @@ class BIO:
         self.level_entry = Entry(root, width=10)
         self.level_entry.grid(row=2, column=0, columnspan=2, padx=150, pady=300,sticky=S+W)
         
-        
         # entry field for number of Trials
         self.trials_entry = Entry(root, width=10)
         self.trials_entry.grid(row=2, column=0,columnspan=2, padx=150, pady=250,sticky=S+W)
@@ -196,7 +192,8 @@ class BIO:
         '''Drop Down Menu'''
         self.drop_down = StringVar(root)
         # Dictionary with options
-        choices = { 'Design 1','Design 2','Design 3','Design 4','Design 5'}
+        choices = {'Box Behnken (2<N<13x3, N/=8)','Fractional Factorial (Nx2) III','Fractional Factorial (Nx2) IV',
+        'Fractional Factorial (Nx2) V','Full Factorial (Any Size)','Plackett Burman (N<24x2)'}
         self.drop_down.set('Select Design') # set the default option
         popupMenu = OptionMenu(root, self.drop_down, *choices)
         popupMenu.grid(row=2, column=0,columnspan=2, padx=150, pady=200,sticky=S+W)
@@ -235,15 +232,54 @@ class BIO:
         
     def open_double_dutch(self):
         #clear driver instantiate the local code for DD
+        op = webdriver.ChromeOptions()
+        op.add_argument('headless')
         requests_session = requests.session()
         requests_session.mount('file://', LocalFileAdapter())
         r = requests_session.get(self.DD_path)
         driver = None
-        driver = webdriver.Chrome(self.chrome_driver_path)
+        driver = webdriver.Chrome(self.chrome_driver_path,options=op)
         driver.get(self.DD_path)
+        uploadElement = driver.find_element_by_xpath('html/body/div/div[1]/div[1]/input[3]')
+        uploadElement.send_keys(self.input_loc)
+        uploadElementbutton = driver.find_element_by_xpath('/html/body/div/div[1]/div[1]/button[1]')
+        uploadElementbutton.click()
+        time.sleep(6)
+        moveAll = driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div[1]/button[2]')
+        moveAll.click()
+        time.sleep(2)
+        lvlfac = driver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[1]/input')
+        lvlfac.clear()
+        lvlfac.send_keys(self.factorLevls)
+        time.sleep(1)
+        editbutton = driver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[1]/button[2]')
+        editbutton.click()
+        modtrials = driver.find_element_by_xpath('/html/body/div[3]/div/div/div[2]/div/div[1]/div[2]/input[1]')
+        modtrials.clear()
+        modtrials.send_keys(self.trialNums)
+        time.sleep(1)
+        donebutton = driver.find_element_by_xpath('/html/body/div[3]/div/div/div[3]/button[2]')
+        donebutton.click()
+        time.sleep(1)
+        selecting = driver.find_element_by_xpath('/html/body/div/div[1]/div[2]/select')
+        selecting = Select(selecting)
+        selecting.select_by_visible_text(self.factorialDesign)
+        time.sleep(1)
+        assignIt = driver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[1]/button[1]')
+        assignIt.click()
+        outputText = driver.find_element_by_xpath('/html/body/div/div[3]/div[1]/div[2]/p')
+        librarydownload = driver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[1]/div/button[2]').click()
+        assignmentdownload = driver.find_element_by_xpath('/html/body/div/div[3]/div[2]/div[1]/div/button[1]').click()
+        self.output_text.insert(tk.END,outputText.text)
+
         
         
     def load(self):
+        class Pair:
+          def __init__(self, part1, part2):
+            self.part1 = part1
+            self.part2 = part2
+
         #add input path as a var
         input = self.input_loc
         #create table
@@ -253,25 +289,47 @@ class BIO:
         #edit csv and save
         df = pd.read_csv(input)
         #create list of factors
-        factors = ['cnifH', 'cnifD', 'cnifK', 'cnifU', 'cnifS', 'cnifM', 'cnifE', 'cnifN', 'cnifB']
+        self.inputEugeneText = self.eugene_entry.get("1.0",'end-1c')
+        factors = list()
+        pairings = list()
+
+        for myline in self.inputEugeneText.splitlines():
+            tempWord = myline.split()
+            if (len(tempWord)>1):
+                if tempWord[0] == "CONTAINS" or tempWord[0] == "contains":
+                    factors.append(tempWord[1])
+                if (tempWord[1] == "MORETHAN" or tempWord[1] == "EXACTLY" or tempWord[1] == "SAME_COUNT" or
+                tempWord[1] == "morethan" or tempWord[1] == "exactly" or tempWord[1] == "same_count"):
+                    factors.append(tempWord[0])
+                if (tempWord[1] == "REPRESSES" or tempWord[1] == "INDUCES" or tempWord[1] == "DRIVES" or tempWord[1] == "WITH" or 
+                tempWord[1] == "THEN" or tempWord[1] == "represses" or tempWord[1] == "induces" or tempWord[1] == "drives" or 
+                tempWord[1] == "with" or tempWord[1] == "then"):
+                    if(tempWord[0][0]=="C" or tempWord[0][0]=="c" or tempWord[2][0]=="C" or tempWord[2][0]=="C"):
+                        pairings.append(Pair(tempWord[0],tempWord[2]))
         
         #add list to dataframe
-        df['Contraits'] = pd.Series(factors, index=None)
-        df.apply(lambda col: col.drop_duplicates().reset_index(drop=True))
+        col_one = df['Constraints'].tolist()
+        c_factor = col_one + factors
+        df2 = pd.DataFrame(c_factor, index=None)
+        df = pd.concat([df2,df], axis=1)
+        df = df.drop(columns=['Constraints'])
+        #df.apply(lambda col: col.drop_duplicates().reset_index(drop=True))
         
         #make sure index is false when saving excel file
-        df.to_csv(r'C:/Users/bmahabir/Desktop/DNA_component_library_edit.csv',index=False)
+        df.to_csv(input,index=False)
         #import edited excel file
-        self.table.importCSV(r'C:/Users/bmahabir/Desktop/DNA_component_library_edit.csv')
+        self.table.importCSV(input)
         self.table.show()
         
+        '''Load function also set up varaibles of trails, level per factor, and factorial design'''
+        self.trialNums = int(self.trials_entry.get())
+        self.factorLevls = int(self.level_entry.get())
+        self.factorialDesign = self.drop_down.get()
+
         '''Code to output text, get entry data, and drop down menu'''
-        #test entry get number
-        print(self.trials_entry.get())
-        #test output put text
-        self.output_text.insert(tk.END,"Good job")
-        #test get drop down data
-        print(self.drop_down.get())
+        #text output to show it wworked
+        self.output_text.insert(tk.END,"Good job!")
+
         
         
     def solve(self):
