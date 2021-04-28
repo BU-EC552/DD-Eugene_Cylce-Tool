@@ -31,3 +31,5 @@ install chrome
 install chrome driver that is based on your version of chrome https://chromedriver.chromium.org/downloads
 
 change path for chrome driver in code
+
+add paths for local install of DD to code in line 91
