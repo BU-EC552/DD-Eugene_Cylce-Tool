@@ -286,7 +286,7 @@ class BIO:
         self.table = TableCanvas(self.tframe)
         self.table.thefont = ('Arial',10)
         
-        #edit csv and save
+        #Read csv 
         df = pd.read_csv(input)
         #create list of factors
         self.inputEugeneText = self.eugene_entry.get("1.0",'end-1c')
