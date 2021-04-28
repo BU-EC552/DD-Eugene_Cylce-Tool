@@ -315,10 +315,11 @@ class BIO:
         df = df.drop(columns=['Constraints'])
         #df.apply(lambda col: col.drop_duplicates().reset_index(drop=True))
         
-        #make sure index is false when saving excel file
-        df.to_csv(input,index=False)
+        index = input.find('.csv')
+        input_edit = input[:index] + '_edited' + input[index:]
+        df.to_csv(input_edit,index=False)
         #import edited excel file
-        self.table.importCSV(input)
+        self.table.importCSV(input_edit)
         self.table.show()
         
         '''Load function also set up varaibles of trails, level per factor, and factorial design'''
